@@ -6,7 +6,7 @@ using SecureBlog.API.Models;
 
 namespace SecureBlog.API.Controllers;
 
-// [Authorize] kasıtlı olarak eklenmedi — M3'te eklenecek
+// [Authorize] kasıtlı olarak eklenmedi
 [ApiController]
 [Route("api/auth")]
 public class AuthController : ControllerBase
@@ -21,7 +21,7 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<User>> Register(RegisterDto dto)
     {
-        // Parola kasıtlı olarak plain text kaydediliyor — M9'da hash'lenecek
+        // Parola kasıtlı olarak plain text kaydediliyor 
         var user = new User
         {
             Username = dto.Username,
@@ -39,7 +39,7 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<ActionResult<User>> Login(LoginDto dto)
     {
-        // Plain text karşılaştırma — M3 ve M11'de düzeltilecek
+        // Plain text karşılaştırma 
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Username == dto.Username && u.PasswordHash == dto.Password);
 

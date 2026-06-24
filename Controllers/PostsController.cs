@@ -38,7 +38,7 @@ public class PostsController : ControllerBase
     [HttpGet("search")]
     public async Task<ActionResult<IEnumerable<Post>>> Search([FromQuery] string keyword)
     {
-        // Kasıtlı zafiyetli: ham string birleştirmeyle SQL sorgusu — M2'de düzeltilecek
+        // Kasıtlı zafiyetli: ham string birleştirmeyle SQL sorgusu 
         var sql = $"SELECT * FROM Posts WHERE Title LIKE '%{keyword}%'";
         var posts = await _context.Posts.FromSqlRaw(sql).ToListAsync();
         return Ok(posts);
@@ -47,7 +47,7 @@ public class PostsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Post>> Create(CreatePostDto dto)
     {
-        // Validation yok — M4'te eklenecek
+        // Validation yok
         var post = new Post
         {
             Title = dto.Title,
@@ -66,7 +66,7 @@ public class PostsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, CreatePostDto dto)
     {
-        // Yetki kontrolü yok — M12'de eklenecek
+        // Yetki kontrolü yok 
         var post = await _context.Posts.FindAsync(id);
         if (post is null)
         {
@@ -83,7 +83,7 @@ public class PostsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        // Yetki kontrolü yok — M12'de eklenecek
+        // Yetki kontrolü yok 
         var post = await _context.Posts.FindAsync(id);
         if (post is null)
         {

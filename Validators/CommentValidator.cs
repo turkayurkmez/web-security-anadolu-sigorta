@@ -5,5 +5,5 @@ namespace SecureBlog.API.Validators;
 
 public class CommentValidator : AbstractValidator<CreateCommentDto>
 {
-    // TODO: M4'te FluentValidation kuralları burada yazılacak
+    // TODO: FluentValidation kuralları burada yazılacak
 }

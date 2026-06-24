@@ -21,8 +21,8 @@ public class MediaController : ControllerBase
     [HttpPost("upload")]
     public async Task<ActionResult<Media>> Upload(IFormFile file)
     {
-        // İzin verilen tip kontrolü yok — M6'da eklenecek
-        // Path izolasyonu yok — M6 ve M17'de eklenecek
+        // İzin verilen tip kontrolü yok 
+        // Path izolasyonu yok
         var uploadsPath = Path.Combine(_env.ContentRootPath, "wwwroot", "uploads");
         Directory.CreateDirectory(uploadsPath);
 
@@ -51,7 +51,7 @@ public class MediaController : ControllerBase
     [HttpGet("{filename}")]
     public IActionResult GetFile(string filename)
     {
-        // Path traversal koruması yok — M17'de eklenecek
+        // Path traversal koruması yok 
         var uploadsPath = Path.Combine(_env.ContentRootPath, "wwwroot", "uploads");
         var filePath = Path.Combine(uploadsPath, filename);
 

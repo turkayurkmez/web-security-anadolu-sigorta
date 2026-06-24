@@ -25,11 +25,11 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// UseHttpsRedirection() kasıtlı olarak eklenmedi — M3'te eklenecek
-// Authentication/Authorization middleware kasıtlı olarak eklenmedi — M3, M10, M11'de eklenecek
-// CORS politikası kasıtlı olarak eklenmedi — M8'de eklenecek
-// Rate Limiter kasıtlı olarak eklenmedi — M15'te eklenecek
-// Global exception handling middleware kasıtlı olarak eklenmedi — M14'te eklenecek
+// UseHttpsRedirection() kasıtlı olarak eklenmedi
+// Authentication/Authorization middleware kasıtlı olarak eklenmedi 
+// CORS politikası kasıtlı olarak eklenmedi
+// Rate Limiter kasıtlı olarak eklenmedi 
+// Global exception handling middleware kasıtlı olarak eklenmedi 
 
 app.MapControllers();
 

@@ -30,7 +30,7 @@ public class CommentsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Comment>> Create(CreateCommentDto dto)
     {
-        // Validation yok — M4'te eklenecek
+        // Validation yok 
         var comment = new Comment
         {
             Content = dto.Content,
@@ -47,7 +47,7 @@ public class CommentsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        // Yetki kontrolü yok — M12'de eklenecek
+        // Yetki kontrolü yok 
         var comment = await _context.Comments.FindAsync(id);
         if (comment is null)
         {
