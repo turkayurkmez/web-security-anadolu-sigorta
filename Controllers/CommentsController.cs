@@ -59,4 +59,30 @@ public class CommentsController : ControllerBase
 
         return NoContent();
     }
+
+
+    [HttpGet("search")]
+    public async Task<IActionResult> Search([FromQuery]string? keyword, [FromQuery] int? postId)
+    {
+        var query = _context.Comments.AsQueryable();
+
+        if (postId.HasValue)
+        {
+            query = query.Where(c => c.PostId == postId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            query = query.Where(c => EF.Functions.Like(c.Content, $"{keyword}") ||
+                                     EF.Functions.Like(c.AuthorId.ToString(), $"{keyword}")
+                                 );
+        }
+
+        var results = await query.AsNoTracking()
+                                 .OrderByDescending(c => c.CreatedAt)
+                                 .Take(50)
+                                 .ToListAsync();
+
+        return Ok(results);
+    }
 }

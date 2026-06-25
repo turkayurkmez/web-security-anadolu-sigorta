@@ -39,8 +39,22 @@ public class PostsController : ControllerBase
     public async Task<ActionResult<IEnumerable<Post>>> Search([FromQuery] string keyword)
     {
         // Kasıtlı zafiyetli: ham string birleştirmeyle SQL sorgusu 
-        var sql = $"SELECT * FROM Posts WHERE Title LIKE '%{keyword}%'";
-        var posts = await _context.Posts.FromSqlRaw(sql).ToListAsync();
+        //var sql = $"SELECT * FROM Posts WHERE Title LIKE '%{keyword}%'";
+        //var posts = await _context.Posts.FromSqlRaw(sql).ToListAsync();
+
+        // Güvenli: 
+
+        if (string.IsNullOrWhiteSpace(keyword))
+        {
+             return BadRequest("keyword boş olamaz");            
+        }
+
+        //EF.Functions.Like aracılığıyle güvenli parametrik sorgu:
+        var posts = await _context.Posts
+            .Where(p => EF.Functions.Like(p.Title, $"%{keyword}%"))
+            .AsNoTracking()
+            .ToListAsync();
+
         return Ok(posts);
     }
 
