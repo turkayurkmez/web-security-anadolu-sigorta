@@ -19,13 +19,30 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddDistributedMemoryCache();
+
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.IsEssential = true;
+});
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// UseHttpsRedirection() kasıtlı olarak eklenmedi
+
+
+
+app.UseHttpsRedirection();
+app.UseHsts();
+app.UseSession();
 // Authentication/Authorization middleware kasıtlı olarak eklenmedi 
 // CORS politikası kasıtlı olarak eklenmedi
 // Rate Limiter kasıtlı olarak eklenmedi 
