@@ -1,8 +1,11 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SecureBlog.API.Data;
 using SecureBlog.API.DTOs;
 using SecureBlog.API.Models;
+using System.Text.Encodings.Web;
+using System.Xml;
 
 namespace SecureBlog.API.Controllers;
 
@@ -27,6 +30,13 @@ public class PostsController : ControllerBase
     public async Task<ActionResult<Post>> GetById(int id)
     {
         var post = await _context.Posts.FindAsync(id);
+        //örnek:
+        var safeTitle = HtmlEncoder.Default.Encode(post.Title);
+        /*
+         * Eğer db'deki Title XSS içeriyorsa <script> alert('Saldırı :)') </script>
+         * &lt;script&bt; 
+         */
+
         if (post is null)
         {
             return NotFound();
@@ -59,9 +69,18 @@ public class PostsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Post>> Create(CreatePostDto dto)
+    public async Task<ActionResult<Post>> Create(CreatePostDto dto, IValidator<CreatePostDto> validator)
     {
-        // Validation yok
+
+        //FluentValidation ile denetim:
+        var result = validator.Validate(dto);       
+        if (!result.IsValid)
+        {
+            return BadRequest(result.ToDictionary());
+        }
+
+
+        
         var post = new Post
         {
             Title = dto.Title,
@@ -108,5 +127,22 @@ public class PostsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+
+    //Zafiyetli XML request'i alan bir end point!!!
+    [HttpPost("import-xml")]
+    public IActionResult ImportFromXML([FromBody]string xmlContent)
+    {
+        var document = new XmlDocument();
+        document.LoadXml(xmlContent);
+        var titleNode = document.SelectSingleNode("//title");
+        var contentNode = document.SelectSingleNode("//content");
+
+        if (titleNode is null || contentNode is null)
+        {
+            return BadRequest("XML Formatı geçersiz");
+        }
+        return Ok(new { Title = titleNode.InnerText, Content = contentNode.InnerText });
     }
 }

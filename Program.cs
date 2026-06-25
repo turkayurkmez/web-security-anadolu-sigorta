@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using SecureBlog.API.Data;
 using Serilog;
@@ -30,6 +31,8 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
 
 var app = builder.Build();
 
@@ -41,8 +44,17 @@ app.UseSwaggerUI();
 
 
 app.UseHttpsRedirection();
+https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security
 app.UseHsts();
 app.UseSession();
+
+
+//DOM based XSS'e karşı response header:
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'");
+    await next();
+});
 // Authentication/Authorization middleware kasıtlı olarak eklenmedi 
 // CORS politikası kasıtlı olarak eklenmedi
 // Rate Limiter kasıtlı olarak eklenmedi 
