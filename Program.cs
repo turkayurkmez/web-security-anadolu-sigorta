@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using SecureBlog.API.Data;
 using Serilog;
@@ -32,6 +33,13 @@ builder.Services.AddSession(options =>
 });
 
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+//Dikkat!! Sadece MVC için anlamlıdır. API için değil!
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(option =>
+                {
+                    option.LoginPath = "/accounts/login";
+                    
+                });
 
 
 var app = builder.Build();
@@ -56,6 +64,8 @@ app.Use(async (context, next) =>
     await next();
 });
 // Authentication/Authorization middleware kasıtlı olarak eklenmedi 
+app.UseAuthentication();
+app.UseAuthorization();
 // CORS politikası kasıtlı olarak eklenmedi
 // Rate Limiter kasıtlı olarak eklenmedi 
 // Global exception handling middleware kasıtlı olarak eklenmedi 

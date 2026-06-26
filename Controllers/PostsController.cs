@@ -134,8 +134,29 @@ public class PostsController : ControllerBase
     [HttpPost("import-xml")]
     public IActionResult ImportFromXML([FromBody]string xmlContent)
     {
-        var document = new XmlDocument();
-        document.LoadXml(xmlContent);
+
+
+
+
+        //Aşağıdaki fonksiyon, DTD (Document Type Definition) yönlendirmesini sorgulamadan kabul eder. Saldırgan bir DTD yönlendirmesiyle sunucudaki bir belgeyi talep edebilir. Bu saldırıya XXE (XML eXternal Entity) diyoruz.
+        //document.LoadXml(xmlContent);
+
+
+        //Çözüm:
+        var settings = new XmlReaderSettings
+        {
+            DtdProcessing = DtdProcessing.Prohibit, //DTD direktiflerini yasakla
+            XmlResolver = null, //Dış kanyak (harici varlık) çözümlemeyi kapat.
+            MaxCharactersFromEntities = 1024 //Billion Laughs Attack'ı önle:
+        };
+
+        using var strReader = new StringReader(xmlContent);
+        using var xmlReader = XmlReader.Create(strReader, settings);
+
+        var document = new XmlDocument() {XmlResolver = null};
+        document.Load(xmlReader);
+
+
         var titleNode = document.SelectSingleNode("//title");
         var contentNode = document.SelectSingleNode("//content");
 
