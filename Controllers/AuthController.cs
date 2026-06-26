@@ -1,8 +1,13 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using SecureBlog.API.Data;
 using SecureBlog.API.DTOs;
 using SecureBlog.API.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace SecureBlog.API.Controllers;
 
@@ -61,7 +66,36 @@ public class AuthController : ControllerBase
         HttpContext.Session.SetString("UserRole", user.Role);
 
 
+        //1. claim'ler:
+        var claims = new[]
+        {
+            new Claim(JwtRegisteredClaimNames.Sub,user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email,user.Email),
+            new Claim(ClaimTypes.Role,user.Role)
+        };
 
-        return Ok(user);
+        //2. SigninCredentials
+
+        string secretKey = "bu-ifade-256-bit-uzunlugunda-olmali-bu-bir kontrol";
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+
+        SigningCredentials credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        //3. token:
+
+        var token = new JwtSecurityToken(
+            issuer: "anadolu.api",
+            audience: "anadolu.client",
+            claims: claims,
+            notBefore: DateTime.Now,
+            expires: DateTime.Now.AddMinutes(20),
+            signingCredentials: credentials
+
+            );
+      
+        
+
+
+        return Ok(new { token = new  JwtSecurityTokenHandler().WriteToken(token)});
     }
 }

@@ -3,6 +3,10 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using SecureBlog.API.Data;
 using Serilog;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.BearerToken;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +26,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDistributedMemoryCache();
-
+//Dikkat!! Sadece MVC için anlamlıdır. API için değil!
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -34,12 +38,34 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 //Dikkat!! Sadece MVC için anlamlıdır. API için değil!
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(option =>
+//builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+//                .AddCookie(option =>
+//                {
+//                    option.LoginPath = "/accounts/login";
+
+//                });
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(option =>
                 {
-                    option.LoginPath = "/accounts/login";
-                    
+                    option.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidIssuer = "anadolu.api",
+                        ValidateAudience = true,
+                        ValidAudience = "anadolu.client",
+                        ValidateLifetime = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("bu-ifade-256-bit-uzunlugunda-olmali-bu-bir kontrol")),
+                        // ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+                        ValidateIssuerSigningKey = true
+
+                    };
+
                 });
+              
+            
+
+
 
 
 var app = builder.Build();
@@ -54,6 +80,10 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security
 app.UseHsts();
+app.UseAuthentication();
+app.UseAuthorization();
+
+
 app.UseSession();
 
 
@@ -64,8 +94,7 @@ app.Use(async (context, next) =>
     await next();
 });
 // Authentication/Authorization middleware kasıtlı olarak eklenmedi 
-app.UseAuthentication();
-app.UseAuthorization();
+
 // CORS politikası kasıtlı olarak eklenmedi
 // Rate Limiter kasıtlı olarak eklenmedi 
 // Global exception handling middleware kasıtlı olarak eklenmedi 

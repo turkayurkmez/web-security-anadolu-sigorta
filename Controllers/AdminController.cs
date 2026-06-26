@@ -9,7 +9,7 @@ namespace SecureBlog.API.Controllers
     [ApiController]
     public class AdminController(AppDbContext _context) : ControllerBase
     {
-        [Authorize]
+        [Authorize(Roles ="Admin")]
         [HttpGet("users")]       
         public async Task<IActionResult> GetUsers()
         {
