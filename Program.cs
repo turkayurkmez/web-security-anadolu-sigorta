@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +18,20 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    //Bilinmeyen bir tip geldiğinde, JsonElement olarak bellekte tut.
+                    options.JsonSerializerOptions.UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement;
+
+                    //Büyük/küçük harf duyarsız property eşleştirme:
+                    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+
+                    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+
+
+                });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
@@ -45,17 +59,19 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 //                });
 
+var config = builder.Configuration;
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(option =>
                 {
                     option.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                     {
                         ValidateIssuer = true,
-                        ValidIssuer = "anadolu.api",
+                        ValidIssuer = config["Jwt:Issuer"],
                         ValidateAudience = true,
-                        ValidAudience = "anadolu.client",
+                        ValidAudience = config["Jwt:Audience"],
                         ValidateLifetime = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("bu-ifade-256-bit-uzunlugunda-olmali-bu-bir kontrol")),
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Secret"])),
                         // ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
                         ValidateIssuerSigningKey = true
 

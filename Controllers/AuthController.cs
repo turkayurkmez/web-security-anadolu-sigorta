@@ -17,10 +17,14 @@ namespace SecureBlog.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IConfiguration _config;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(AppDbContext context)
+    public AuthController(AppDbContext context, IConfiguration configuration, ILogger<AuthController> logger )
     {
         _context = context;
+        _config = configuration;
+        _logger = logger;
     }
 
     [HttpPost("register")]
@@ -76,7 +80,10 @@ public class AuthController : ControllerBase
 
         //2. SigninCredentials
 
-        string secretKey = "bu-ifade-256-bit-uzunlugunda-olmali-bu-bir kontrol";
+        string secretKey = _config["Jwt:Secret"];
+
+        _logger.LogInformation($"Dikkat: {secretKey} ");
+
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
 
@@ -84,8 +91,8 @@ public class AuthController : ControllerBase
         //3. token:
 
         var token = new JwtSecurityToken(
-            issuer: "anadolu.api",
-            audience: "anadolu.client",
+            issuer: _config["Jwt:Issuer"],
+            audience: _config["Jwt:Audience"],
             claims: claims,
             notBefore: DateTime.Now,
             expires: DateTime.Now.AddMinutes(20),
