@@ -1,0 +1,32 @@
+<html>
+    <head>       
+        <title>My First Web Page</title>
+        <script src="https://code.jquery.com/jquery-4.0.0.min.js" integrity="sha256-OaVG6prZf4v69dPg6PhVattBXkcOWQB62pdZ3ORyrao=" crossorigin="anonymous"></script> 
+    </head>
+    <body>
+        <button id="myButton">Post'ları getir</button>
+
+        <div id="postContainer"></div>
+        <script>
+            $(document).ready(function() {
+                $('#myButton').click(function() {
+                    $.ajax({
+                        url: 'https://localhost:7277/api/posts',
+                        method: 'GET',
+                        success: function(data) {
+                            var postContainer = $('#postContainer');
+                            postContainer.empty(); // Clear previous posts
+                            data.forEach(function(post) {
+                                var postElement = $('<div></div>').text(post.title);
+                                postContainer.append(postElement);
+                            });
+                        },
+                        error: function() {
+                            alert('Error fetching posts.');
+                        }
+                    });
+                });
+            });
+        </script>
+    </body>    
+</html>

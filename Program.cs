@@ -78,11 +78,53 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     };
 
                 });
-              
-            
+
+
+/*
+ *  Güvenli httpClient konfigürasyonu.
+ */
+
+builder.Services.AddHttpClient("SecureBlogClient", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.Add("User-Agent", "SecureBlog/1.0");
+
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    AllowAutoRedirect = false, //Dikkat!!! Yanıtlar otomatik yönlendirilemesin!
+    MaxConnectionsPerServer = 10
+});
+
+var allowedOrigins = builder.Environment.IsDevelopment() ?
+                     new[] { "http://localhost:4200", "http://localhost:5137" } :
+                     new[] { "https://blog.anadolu.com.tr" };
 
 
 
+builder.Services.AddCors(option =>
+{
+    //option.AddPolicy("PublicPolicy", policy =>
+    //{
+    //    policy.AllowAnyOrigin()
+    //          .AllowAnyMethod()
+    //          .AllowAnyHeader();
+    //    //www.anadolusigorta.com.tr
+    //    //anadolusigorta.com.tr
+    //    //customers.anadolusigorta.com.tr
+    //    //anadolusigorta.com.tr:8885
+    //});
+
+    option.AddPolicy("Secure", policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
+              .WithMethods("GET", "POST")
+              .WithHeaders("Content-Type", "Authorization")
+              .AllowCredentials();
+
+
+
+    });
+});
 
 var app = builder.Build();
 
@@ -96,6 +138,9 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security
 app.UseHsts();
+
+app.UseCors("PublicPolicy");
+
 app.UseAuthentication();
 app.UseAuthorization();
 

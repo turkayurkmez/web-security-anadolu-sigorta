@@ -28,7 +28,7 @@ public class CommentsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Comment>> Create(CreateCommentDto dto)
+    public async Task<ActionResult<Comment>> Create(CreateCommentDto dto, IHttpClientFactory factory)
     {
         // Validation yok 
         var comment = new Comment
@@ -37,6 +37,9 @@ public class CommentsController : ControllerBase
             PostId = dto.PostId,
             AuthorId = dto.AuthorId
         };
+
+        var httpClient = factory.CreateClient("https://sample.com/request");
+        //httpClient.PostAsync()
 
         _context.Comments.Add(comment);
         await _context.SaveChangesAsync();
