@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using SecureBlog.API.Data;
 using SecureBlog.API.DTOs;
 using SecureBlog.API.Models;
+using SecureBlog.API.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -34,12 +35,19 @@ public class AuthController : ControllerBase
         {
             return Conflict("Bu isim ya da eposta zaten kullanılıyor");
         }
+
+
+
         // Parola kasıtlı olarak plain text kaydediliyor 
+
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
+
         var user = new User
         {
             Username = dto.Username,
             Email = dto.Email,
-            PasswordHash = dto.Password,
+            PasswordHash = passwordHash,
             Role = "Author"
         };
 
@@ -50,16 +58,18 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<User>> Login(LoginDto dto)
+    public async Task<ActionResult<User>> Login(LoginDto dto, TokenService tokenService)
     {
         // Plain text karşılaştırma 
         var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.Username == dto.Username && u.PasswordHash == dto.Password);
+            .FirstOrDefaultAsync(u => u.Username == dto.Username);
 
-        if (user is null)
+        if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password,user.PasswordHash))
         {
             return Unauthorized("Hatalı giriş bilgileri");
         }
+
+
 
         HttpContext.Session.Clear();
         await HttpContext.Session.CommitAsync();
@@ -69,40 +79,60 @@ public class AuthController : ControllerBase
         HttpContext.Session.SetString("UserId", user.Id.ToString());
         HttpContext.Session.SetString("UserRole", user.Role);
 
-
-        //1. claim'ler:
-        var claims = new[]
+        var accessToken = tokenService.GenerateAccessToken(user);
+        var refreshToken = new RefreshToken()
         {
-            new Claim(JwtRegisteredClaimNames.Sub,user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email,user.Email),
-            new Claim(ClaimTypes.Role,user.Role)
+            Token = tokenService.GenerateRefreshToken(),
+            UserId = user.Id,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
         };
 
-        //2. SigninCredentials
-
-        string secretKey = _config["Jwt:Secret"];
-
-        _logger.LogInformation($"Dikkat: {secretKey} ");
+        await _context.RefreshTokens.AddAsync(refreshToken);
+        await _context.SaveChangesAsync();
 
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
 
-        SigningCredentials credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        //3. token:
-
-        var token = new JwtSecurityToken(
-            issuer: _config["Jwt:Issuer"],
-            audience: _config["Jwt:Audience"],
-            claims: claims,
-            notBefore: DateTime.Now,
-            expires: DateTime.Now.AddMinutes(20),
-            signingCredentials: credentials
-
-            );
-      
-        
-
-
-        return Ok(new { token = new  JwtSecurityTokenHandler().WriteToken(token)});
+        return Ok(new { token = accessToken, refreshToken = refreshToken.Token });
     }
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh(RefreshTokenDto dto, TokenService tokenService)
+    {
+        var stored = await _context.RefreshTokens.Include(rt => rt.User)
+                                                 .FirstOrDefaultAsync(rt => rt.Token == dto.Token);
+
+        if (stored is null || stored.IsRevoked || stored.ExpiresAt < DateTime.UtcNow)
+        {
+            return Unauthorized("Bu token geçersiz");
+
+        }
+
+        stored.IsRevoked = true;
+        stored.ReplacedByToken = tokenService.GenerateRefreshToken();
+
+        var newRefreshtoken = new RefreshToken()
+        {
+            User = stored.User,
+            Token = stored.ReplacedByToken,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
+        };
+
+        await _context.RefreshTokens.AddAsync(newRefreshtoken);
+        await _context.SaveChangesAsync();
+
+        var newACessToken = tokenService.GenerateAccessToken(stored.User);
+
+        return Ok(new { acess = newACessToken, refresh = newRefreshtoken.Token });
+
+    }
+
+
+
+
+
+
+}
+
+public class RefreshTokenDto
+{
+    public string Token { get; internal set; }
 }

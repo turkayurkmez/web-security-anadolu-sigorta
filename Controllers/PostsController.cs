@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SecureBlog.API.Data;
@@ -96,10 +97,13 @@ public class PostsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = post.Id }, post);
     }
 
+
+    [Authorize(Policy = "CanEditPost")]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, CreatePostDto dto)
     {
         // Yetki kontrolü yok 
+
         var post = await _context.Posts.FindAsync(id);
         if (post is null)
         {

@@ -8,6 +8,10 @@ using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
+using SecureBlog.API.Middleware;
+using SecureBlog.API.Services.Authorization;
+using Microsoft.AspNetCore.Authorization;
+using SecureBlog.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -126,6 +130,20 @@ builder.Services.AddCors(option =>
     });
 });
 
+
+builder.Services.AddAuthorization(opt =>
+{
+    opt.AddPolicy("CanEditPost", policy => policy.AddRequirements(new PostEditRequirement()));
+    opt.AddPolicy("CanDeletePost", policy => policy.RequireRole("Admin", "Editor"));
+
+});
+
+builder.Services.AddScoped<IAuthorizationHandler, PostEditHandler>();
+
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<TokenService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -137,12 +155,15 @@ app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security
+app.UseSecurityHeaders();
 app.UseHsts();
 
-app.UseCors("PublicPolicy");
 
+app.UseCors("Secure");
 app.UseAuthentication();
 app.UseAuthorization();
+
+
 
 
 app.UseSession();
